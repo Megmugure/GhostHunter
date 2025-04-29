@@ -1,0 +1,7 @@
+Kolmogorov–Smirnov Test
+D = 0.485583882295093
+p-value = 0
+
+Hartigan's Dip Test
+D = 0.0893212626789269
+p-value = 0
