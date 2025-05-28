@@ -1,0 +1,21 @@
+name: tests_of_ghost_introgression_pipeline
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python=3.10
+  - pandas
+  - matplotlib
+  - seaborn
+  - numpy
+  - scipy         # Needed for chi-square p-value computation
+  - snakemake
+  - parallel              # For the STRUCTURE parallel launcher
+  - pip
+  - pip:
+      - scikit-learn
+      - regex
+
+

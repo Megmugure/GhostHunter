@@ -1,0 +1,10 @@
+# Nested models for 3 populations under Model1
+2
+model population sizes 0 1 and 2 equal
+equal p 0 1 2 
+model  sister pairs have equal rates
+equal m 0 1
+equal m 2 3
+equal m 4 5
+equal m 6 7
+

@@ -1,0 +1,26 @@
+# STRUCTURE parameters
+output_dir: structure_outputs
+structure_exec: ./structure
+burnin: 10
+numreps: 50
+K_values: [1, 2, 3, 4, 5, 6]
+num_bootstraps: 100
+str_file_pattern: "model{model_num}_replicate{rep_num}_cleaned.str"
+test_mode: false
+
+# IMa3 settings
+ima3_exec: ../IMa3/IMa3
+nested_models_2pop: config/nested_models_2pop.txt
+
+# M-mode parameters for IMa3
+num_cores: 2
+ti_sample_burnin: 10000
+ti_sample_length: 1000
+ti_sample_interval: 200
+ima3_mutation_prior: 5.5
+ima3_migration_prior: 5.5
+ima3_theta_prior: 100
+ima3_chain_swap: 1
+ima3_heating_steps: 20
+ima3_heating_a: 0.95
+ima3_heating_b: 0.85

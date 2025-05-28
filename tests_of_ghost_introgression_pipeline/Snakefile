@@ -1,0 +1,210 @@
+configfile: "config/config.yaml"
+
+# Unified model/replicate list for both STRUCTURE and IMa3
+models = ima3_models = ["model1"]
+replicates = ima3_replicates = ["replicate0"]
+ks = [1, 2, 3, 4, 5, 6]
+
+# Master rule
+rule all:
+    input:
+        # STRUCTURE outputs
+        expand("results/structure_outputs/{model}/{replicate}/structure_run_K{K}_f",
+               model=models, replicate=replicates, K=ks),
+        "results/structure_loglik_summary.csv",
+        "results/structure_aic_bic_summary.csv",
+        "results/bootstrap_lrt_results.csv",
+        "results/plot_loglik_vs_k.png",
+        "results/plot_aic_bic_vs_k.png",
+        "results/plot_bootstrap_lrt_pvalues.png",
+
+        # IMa3 outputs
+        expand("results/ima3/LRT_outfiles_2pop/{model}_{replicate}.2pop.LRT.out",
+               model=ima3_models, replicate=ima3_replicates),
+        expand("results/ima3/LRT_outfiles_3pop/{model}_{replicate}.3pop.LRT.out",
+               model=ima3_models, replicate=ima3_replicates),
+        "results/ima3/All_LRT_results_2pop.csv",
+        "results/ima3/All_LRT_results_3pop.csv",
+        "results/ima3/plot1_boxplot_2llr_by_model.png",
+        "results/ima3/plot2_barplot_logpval_by_model.png",
+        "results/ima3/plot3_facetgrid_boxplot_by_model.png",
+        "results/ima3/plot4_stripplot_logpval_by_replicate.png",
+        "results/ima3/plot5_heatmap_avg_logpval.png",
+        "results/ima3/plot6_violin_2llr_by_model.png"
+
+# -------------------------------
+# PART 1: STRUCTURE ANALYSIS
+# -------------------------------
+
+rule run_structure:
+    input:
+        strfile = "data/structure_inputs/{model}_{replicate}_cleaned.str"
+    output:
+        outlog = "results/structure_outputs/{model}/{replicate}/structure_K{K}.log",
+        out_f = "results/structure_outputs/{model}/{replicate}/structure_run_K{K}_f"
+    params:
+        outdir = "results/structure_outputs/{model}/{replicate}",
+        K = lambda wildcards: wildcards.K,
+        exec = config["structure_exec"],
+        burnin = config.get("burnin", 100000),
+        numreps = config.get("numreps", 500000)
+    shell:
+        """
+        python scripts/run_structure.py \
+            --input {input.strfile} \
+            --outdir {params.outdir} \
+            --structure_exec {params.exec} \
+            --K {params.K} \
+            --burnin {params.burnin} \
+            --numreps {params.numreps} \
+            > {output.outlog} 2>&1
+        """
+
+rule parse_logliks:
+    input:
+        outputs = expand("results/structure_outputs/{model}/{replicate}/structure_run_K{K}_f",
+                         model=models, replicate=replicates, K=ks)
+    output:
+        "results/structure_loglik_summary.csv"
+    params:
+        indir = "results/structure_outputs"
+    shell:
+        "python scripts/parse_structure_logliks.py --indir {params.indir} --outfile {output}"
+
+rule compute_aic_bic:
+    input:
+        outputs = expand("results/structure_outputs/{model}/{replicate}/structure_run_K{K}_f",
+                         model=models, replicate=replicates, K=ks)
+    output:
+        "results/structure_aic_bic_summary.csv"
+    params:
+        indir = "results/structure_outputs",
+        strdir = "data/structure_inputs"
+    shell:
+        "python scripts/compute_structure_aic_bic.py --indir {params.indir} --strdir {params.strdir} --outfile {output}"
+
+rule bootstrap_lrt:
+    input:
+        csv = "results/structure_loglik_summary.csv"
+    output:
+        lrt = "results/bootstrap_lrt_results.csv"
+    params:
+        bootstraps = config.get("num_bootstraps", 100)
+    shell:
+        "python scripts/bootstrap_structure_lrt.py "
+        "--input {input.csv} --output {output.lrt} --bootstraps {params.bootstraps}"
+
+rule plot_structure_summary:
+    input:
+        loglik = "results/structure_loglik_summary.csv",
+        aicbic = "results/structure_aic_bic_summary.csv",
+        lrt = "results/bootstrap_lrt_results.csv"
+    output:
+        loglik_plot = "results/plot_loglik_vs_k.png",
+        aicbic_plot = "results/plot_aic_bic_vs_k.png",
+        lrt_plot = "results/plot_bootstrap_lrt_pvalues.png"
+    shell:
+        "python scripts/plot_structure_summary.py --loglik {input.loglik} --aicbic {input.aicbic} --lrt {input.lrt} --outdir results"
+
+# -------------------------------
+# PART 2: IMa3 LRT ANALYSIS
+# -------------------------------
+
+rule generate_ti_2pop:
+    input:
+        "data/ima3_inputs_2pop/{model}_{replicate}.u_2pop.u"
+    output:
+        "results/ima3/ti_files_2pop/{model}_{replicate}.u_2pop_null.out.ti"
+    shell:
+        """
+        bash scripts/generate_ti_2pop.sh \
+            data/ima3_inputs_2pop \
+            results/ima3/ti_files_2pop \
+            {config[ima3_exec]} \
+            {config[num_cores]} \
+            {config[ti_sample_burnin]} \
+            {config[ti_sample_length]} \
+            {config[ti_sample_interval]} \
+            {config[ima3_chain_swap]} \
+            {config[ima3_heating_steps]} \
+            {config[ima3_heating_a]} \
+            {config[ima3_heating_b]}
+        """
+
+
+rule generate_ti_3pop:
+    input:
+        "data/ima3_inputs_3pop/{model}_{replicate}.u"
+    output:
+        "results/ima3/ti_files_3pop/{model}_{replicate}.u.out.ti"
+    shell:
+        """
+        bash scripts/generate_ti_3pop.sh \
+            data/ima3_inputs_3pop \
+            results/ima3/ti_files_3pop \
+            {config[ima3_exec]} \
+            {config[num_cores]} \
+            {config[ti_sample_burnin]} \
+            {config[ti_sample_length]} \
+            {config[ti_sample_interval]} \
+            {config[ima3_chain_swap]} \
+            {config[ima3_heating_steps]} \
+            {config[ima3_heating_a]} \
+            {config[ima3_heating_b]}
+        """
+
+
+rule run_lrt_2pop:
+    input:
+        ufile = "data/ima3_inputs_2pop/{model}_{replicate}.u_2pop.u",
+        tifile = "results/ima3/ti_files_2pop/{model}_{replicate}.u_2pop_null.out.ti"
+    output:
+        "results/ima3/LRT_outfiles_2pop/{model}_{replicate}.2pop.LRT.out"
+    shell:
+        """
+        bash scripts/run_lrt_2pop.sh data/ima3_inputs_2pop results/ima3/ti_files_2pop results/ima3/LRT_outfiles_2pop {config[nested_models_2pop]} {config[ima3_exec]} 1
+        """
+
+rule run_lrt_3pop:
+    input:
+        ufile = "data/ima3_inputs_3pop/{model}_{replicate}.u",
+        tifile = "results/ima3/ti_files_3pop/{model}_{replicate}.u.out.ti"
+    output:
+        "results/ima3/LRT_outfiles_3pop/{model}_{replicate}.3pop.LRT.out"
+    shell:
+        """
+        bash scripts/run_lrt_3pop.sh data/ima3_inputs_3pop results/ima3/ti_files_3pop results/ima3/LRT_outfiles_3pop {config[ima3_exec]} 1
+        """
+
+rule parse_lrt_2pop:
+    input:
+        expand("results/ima3/LRT_outfiles_2pop/{model}_{replicate}.2pop.LRT.out",
+               model=ima3_models, replicate=ima3_replicates)
+    output:
+        "results/ima3/All_LRT_results_2pop.csv"
+    shell:
+        "bash scripts/parse_lrt_results_2pop.sh"
+
+rule parse_lrt_3pop:
+    input:
+        expand("results/ima3/LRT_outfiles_3pop/{model}_{replicate}.3pop.LRT.out",
+               model=ima3_models, replicate=ima3_replicates)
+    output:
+        "results/ima3/All_LRT_results_3pop.csv"
+    shell:
+        "bash scripts/parse_lrt_results_3pop.sh"
+
+rule plot_ima3_lrt_summary:
+    input:
+        "results/ima3/All_LRT_results_2pop.csv",
+        "results/ima3/All_LRT_results_3pop.csv"
+    output:
+        "results/ima3/plot1_boxplot_2llr_by_model.png",
+        "results/ima3/plot2_barplot_logpval_by_model.png",
+        "results/ima3/plot3_facetgrid_boxplot_by_model.png",
+        "results/ima3/plot4_stripplot_logpval_by_replicate.png",
+        "results/ima3/plot5_heatmap_avg_logpval.png",
+        "results/ima3/plot6_violin_2llr_by_model.png"
+    shell:
+        "python scripts/plot_ima3_lrt_summary.py"
+

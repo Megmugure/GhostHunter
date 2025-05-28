@@ -1,0 +1,5 @@
+# 2‐pop LRT: null (no migration) vs full
+1
+model no migration
+constant m 0.0 0 1
+
