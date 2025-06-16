@@ -32,9 +32,7 @@ rule all:
         "results/ima3/plot5_heatmap_avg_logpval.png",
         "results/ima3/plot6_violin_2llr_by_model.png"
 
-# -------------------------------
 # PART 1: STRUCTURE ANALYSIS
-# -------------------------------
 
 rule run_structure:
     input:
@@ -106,9 +104,8 @@ rule plot_structure_summary:
     shell:
         "python scripts/plot_structure_summary.py --loglik {input.loglik} --aicbic {input.aicbic} --lrt {input.lrt} --outdir results"
 
-# -------------------------------
+
 # PART 2: IMa3 LRT ANALYSIS
-# -------------------------------
 
 rule generate_ti_2pop:
     input:
