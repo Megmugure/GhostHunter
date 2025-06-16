@@ -84,6 +84,6 @@ df = pd.DataFrame(results)
 if not df.empty:
     df.sort_values(by=["model", "replicate", "K"], inplace=True)
     df.to_csv(args.outfile, index=False)
-    print(f"✅ Done! Output saved to {args.outfile}")
+    print(f"Done! Output saved to {args.outfile}")
 else:
-    print("⚠️ No data found. Check if STRUCTURE outputs and .str files were correctly matched.")
+    print("No data found. Check if STRUCTURE outputs and .str files were correctly matched.")
