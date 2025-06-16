@@ -84,7 +84,7 @@ def main():
         "-o", output_prefix
     ]
 
-    print("🔧 Running STRUCTURE:", " ".join(cmd))
+    print("Running STRUCTURE:", " ".join(cmd))
     subprocess.run(cmd, check=True)
     print(f"STRUCTURE run complete: {output_prefix}_f")
 
