@@ -1,5 +1,4 @@
 #!/bin/bash
-# Robust parser for 2pop LRT results (from Snakemake directory layout)
 
 set -euo pipefail
 
@@ -21,8 +20,8 @@ for file in results/ima3/LRT_outfiles_2pop/*.LRT.out; do
         pval=$(python3 -c "import scipy.stats as s; print(round(s.chi2.sf($llr, $df), 6))")
         echo -e "$model,$replicate,$filename,$llr,$df,$pval" >> "$OUTPUT_FILE"
     else
-        echo "⚠ No valid LRT summary found in $file" >&2
+        echo "No valid LRT summary found in $file" >&2
     fi
 done
 
-echo "✔ Parsed 2pop LRT results saved to $OUTPUT_FILE"
+echo "Parsed 2pop LRT results saved to $OUTPUT_FILE"
