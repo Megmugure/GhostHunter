@@ -1,5 +1,5 @@
 #!/bin/bash
-# Robust parser for 3pop LRT results (Snakemake output structure)
+
 
 set -euo pipefail
 
@@ -24,4 +24,4 @@ for file in results/ima3/LRT_outfiles_3pop/*.LRT.out; do
     done < "$file"
 done
 
-echo "✔ Parsed 3pop LRT results saved to $OUTPUT_FILE"
+echo "Parsed 3pop LRT results saved to $OUTPUT_FILE"
