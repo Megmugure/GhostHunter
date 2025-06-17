@@ -18,7 +18,7 @@ def main():
     aic_bic_df = pd.read_csv(args.aicbic)
     lrt_df = pd.read_csv(args.lrt)
 
-    # === Plot 1: Log-Likelihood vs K per Model ===
+    # Plot 1: Log-Likelihood vs K per Model
     plt.figure(figsize=(10, 6))
     for model in loglik_df["model"].unique():
         df = loglik_df[loglik_df["model"] == model]
@@ -33,7 +33,7 @@ def main():
     plt.savefig(os.path.join(args.outdir, "plot_loglik_vs_k.png"))
     plt.close()
 
-    # === Plot 2: AIC and BIC across K per Model ===
+    # Plot 2: AIC and BIC across K per Model
     plt.figure(figsize=(12, 6))
     for model in aic_bic_df["model"].unique():
         df = aic_bic_df[aic_bic_df["model"] == model]
@@ -50,7 +50,7 @@ def main():
     plt.savefig(os.path.join(args.outdir, "plot_aic_bic_vs_k.png"))
     plt.close()
 
-    # === Plot 3: Bootstrap LRT p-values for K Comparisons ===
+    # Plot 3: Bootstrap LRT p-values for K Comparisons
     plt.figure(figsize=(10, 6))
     mean_pvals = lrt_df.groupby(["K0", "K1"])["p_value"].mean().reset_index()
     plt.plot(mean_pvals["K1"], mean_pvals["p_value"], marker='o')
