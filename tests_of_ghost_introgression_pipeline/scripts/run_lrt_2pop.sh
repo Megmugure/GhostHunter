@@ -1,4 +1,11 @@
 #!/bin/bash
+# Script: run_lrt_2pop.sh
+# Author: Margaret Wanjiku
+# Purpose:
+#   Runs LRT (likelihood ratio test) for IMa3 2-pop models.
+# Usage:
+#   bash run_lrt_2pop.sh input_dir ti_dir output_dir model_file ima3_path ncores
+
 set -euo pipefail
 
 INPUT_DIR=$1
