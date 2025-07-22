@@ -1,4 +1,11 @@
 #!/bin/bash
+# Script: run_lrt_3pop.sh
+# Author: Margaret Wanjiku
+# Purpose:
+#   Runs LRT for IMa3 3-population models.
+# Usage:
+#   bash run_lrt_3pop.sh input_dir ti_dir output_dir ima3_path ncores
+
 set -euo pipefail
 
 INPUT_DIR=$1
