@@ -1,14 +1,28 @@
+###############################################
+# Snakefile — STRUCTURE + IMa3 Pipeline
+# Author: Margaret Wanjiku
+# Description:
+#   - Runs STRUCTURE to estimate population clusters (K)
+#   - Computes AIC/BIC and performs bootstrap LRTs
+#   - Uses IMa3 for coalescent-based likelihood ratio testing
+# Usage:
+#   snakemake -s Snakefile --use-conda --cores <N>
+###############################################
+
 configfile: "config/config.yaml"
 
-# Unified model/replicate list for both STRUCTURE and IMa3
+# Define the list of models and replicates
 models = ima3_models = ["model1"]
 replicates = ima3_replicates = ["replicate0"]
 ks = [1, 2, 3, 4, 5, 6]
 
-# Master rule
+#######################################################
+# Rule: all
+# Purpose: Master rule listing all expected final outputs
+#######################################################
 rule all:
     input:
-        # STRUCTURE outputs
+        # STRUCTURE results
         expand("results/structure_outputs/{model}/{replicate}/structure_run_K{K}_f",
                model=models, replicate=replicates, K=ks),
         "results/structure_loglik_summary.csv",
@@ -18,7 +32,7 @@ rule all:
         "results/plot_aic_bic_vs_k.png",
         "results/plot_bootstrap_lrt_pvalues.png",
 
-        # IMa3 outputs
+        # IMa3 LRT results
         expand("results/ima3/LRT_outfiles_2pop/{model}_{replicate}.2pop.LRT.out",
                model=ima3_models, replicate=ima3_replicates),
         expand("results/ima3/LRT_outfiles_3pop/{model}_{replicate}.3pop.LRT.out",
@@ -32,9 +46,16 @@ rule all:
         "results/ima3/plot5_heatmap_avg_logpval.png",
         "results/ima3/plot6_violin_2llr_by_model.png"
 
-# PART 1: STRUCTURE ANALYSIS
+#######################################################
+# STRUCTURE ANALYSIS
+#######################################################
 
 rule run_structure:
+    """
+    Run STRUCTURE for a specific model, replicate, and K value.
+    Input: cleaned STRUCTURE .str file
+    Output: STRUCTURE log file and output (_f) file
+    """
     input:
         strfile = "data/structure_inputs/{model}_{replicate}_cleaned.str"
     output:
@@ -59,9 +80,13 @@ rule run_structure:
         """
 
 rule parse_logliks:
+    """
+    Run STRUCTURE output files and extract log-likelihoods for each K.
+    Output: CSV summarizing log-likelihoods per model and replicate.
+    """
     input:
-        outputs = expand("results/structure_outputs/{model}/{replicate}/structure_run_K{K}_f",
-                         model=models, replicate=replicates, K=ks)
+        expand("results/structure_outputs/{model}/{replicate}/structure_run_K{K}_f",
+               model=models, replicate=replicates, K=ks)
     output:
         "results/structure_loglik_summary.csv"
     params:
@@ -70,9 +95,13 @@ rule parse_logliks:
         "python scripts/parse_structure_logliks.py --indir {params.indir} --outfile {output}"
 
 rule compute_aic_bic:
+    """
+    Compute AIC and BIC values from STRUCTURE output.
+    Requires input .str files to calculate number of individuals/loci.
+    """
     input:
-        outputs = expand("results/structure_outputs/{model}/{replicate}/structure_run_K{K}_f",
-                         model=models, replicate=replicates, K=ks)
+        expand("results/structure_outputs/{model}/{replicate}/structure_run_K{K}_f",
+               model=models, replicate=replicates, K=ks)
     output:
         "results/structure_aic_bic_summary.csv"
     params:
@@ -82,6 +111,10 @@ rule compute_aic_bic:
         "python scripts/compute_structure_aic_bic.py --indir {params.indir} --strdir {params.strdir} --outfile {output}"
 
 rule bootstrap_lrt:
+    """
+    Perform bootstrapped likelihood ratio tests for K comparisons.
+    Uses STRUCTURE log-likelihoods.
+    """
     input:
         csv = "results/structure_loglik_summary.csv"
     output:
@@ -89,25 +122,36 @@ rule bootstrap_lrt:
     params:
         bootstraps = config.get("num_bootstraps", 100)
     shell:
-        "python scripts/bootstrap_structure_lrt.py "
-        "--input {input.csv} --output {output.lrt} --bootstraps {params.bootstraps}"
+        """
+        python scripts/bootstrap_structure_lrt.py \
+            --input {input.csv} \
+            --output {output.lrt} \
+            --bootstraps {params.bootstraps}
+        """
 
 rule plot_structure_summary:
+    """
+    Generate plots: log-likelihood vs K, AIC/BIC vs K, LRT p-values.
+    """
     input:
         loglik = "results/structure_loglik_summary.csv",
         aicbic = "results/structure_aic_bic_summary.csv",
         lrt = "results/bootstrap_lrt_results.csv"
     output:
-        loglik_plot = "results/plot_loglik_vs_k.png",
-        aicbic_plot = "results/plot_aic_bic_vs_k.png",
-        lrt_plot = "results/plot_bootstrap_lrt_pvalues.png"
+        "results/plot_loglik_vs_k.png",
+        "results/plot_aic_bic_vs_k.png",
+        "results/plot_bootstrap_lrt_pvalues.png"
     shell:
         "python scripts/plot_structure_summary.py --loglik {input.loglik} --aicbic {input.aicbic} --lrt {input.lrt} --outdir results"
 
-
-# PART 2: IMa3 LRT ANALYSIS
+#######################################################
+# IMa3 LRT ANALYSIS
+#######################################################
 
 rule generate_ti_2pop:
+    """
+    Run IMa3 to sample genealogies and generate .ti files for 2-pop models.
+    """
     input:
         "data/ima3_inputs_2pop/{model}_{replicate}.u_2pop.u"
     output:
@@ -128,8 +172,10 @@ rule generate_ti_2pop:
             {config[ima3_heating_b]}
         """
 
-
 rule generate_ti_3pop:
+    """
+    Same as above, but for 3-pop models.
+    """
     input:
         "data/ima3_inputs_3pop/{model}_{replicate}.u"
     output:
@@ -150,30 +196,47 @@ rule generate_ti_3pop:
             {config[ima3_heating_b]}
         """
 
-
 rule run_lrt_2pop:
+    """
+    Run IMa3 LRT for 2-pop models using TI files and nested model file.
+    """
     input:
-        ufile = "data/ima3_inputs_2pop/{model}_{replicate}.u_2pop.u",
-        tifile = "results/ima3/ti_files_2pop/{model}_{replicate}.u_2pop_null.out.ti"
+        "data/ima3_inputs_2pop/{model}_{replicate}.u_2pop.u",
+        "results/ima3/ti_files_2pop/{model}_{replicate}.u_2pop_null.out.ti"
     output:
         "results/ima3/LRT_outfiles_2pop/{model}_{replicate}.2pop.LRT.out"
     shell:
         """
-        bash scripts/run_lrt_2pop.sh data/ima3_inputs_2pop results/ima3/ti_files_2pop results/ima3/LRT_outfiles_2pop {config[nested_models_2pop]} {config[ima3_exec]} 1
+        bash scripts/run_lrt_2pop.sh \
+            data/ima3_inputs_2pop \
+            results/ima3/ti_files_2pop \
+            results/ima3/LRT_outfiles_2pop \
+            {config[nested_models_2pop]} \
+            {config[ima3_exec]} 1
         """
 
 rule run_lrt_3pop:
+    """
+    Same as above, but for 3-pop models.
+    """
     input:
-        ufile = "data/ima3_inputs_3pop/{model}_{replicate}.u",
-        tifile = "results/ima3/ti_files_3pop/{model}_{replicate}.u.out.ti"
+        "data/ima3_inputs_3pop/{model}_{replicate}.u",
+        "results/ima3/ti_files_3pop/{model}_{replicate}.u.out.ti"
     output:
         "results/ima3/LRT_outfiles_3pop/{model}_{replicate}.3pop.LRT.out"
     shell:
         """
-        bash scripts/run_lrt_3pop.sh data/ima3_inputs_3pop results/ima3/ti_files_3pop results/ima3/LRT_outfiles_3pop {config[ima3_exec]} 1
+        bash scripts/run_lrt_3pop.sh \
+            data/ima3_inputs_3pop \
+            results/ima3/ti_files_3pop \
+            results/ima3/LRT_outfiles_3pop \
+            {config[ima3_exec]} 1
         """
 
 rule parse_lrt_2pop:
+    """
+    Parse LRT results for 2-pop models into summary CSV.
+    """
     input:
         expand("results/ima3/LRT_outfiles_2pop/{model}_{replicate}.2pop.LRT.out",
                model=ima3_models, replicate=ima3_replicates)
@@ -183,6 +246,9 @@ rule parse_lrt_2pop:
         "bash scripts/parse_lrt_results_2pop.sh"
 
 rule parse_lrt_3pop:
+    """
+    Same as above, but for 3-pop models.
+    """
     input:
         expand("results/ima3/LRT_outfiles_3pop/{model}_{replicate}.3pop.LRT.out",
                model=ima3_models, replicate=ima3_replicates)
@@ -192,6 +258,9 @@ rule parse_lrt_3pop:
         "bash scripts/parse_lrt_results_3pop.sh"
 
 rule plot_ima3_lrt_summary:
+    """
+    Create visualizations for IMa3 LRT results.
+    """
     input:
         "results/ima3/All_LRT_results_2pop.csv",
         "results/ima3/All_LRT_results_3pop.csv"
@@ -204,4 +273,3 @@ rule plot_ima3_lrt_summary:
         "results/ima3/plot6_violin_2llr_by_model.png"
     shell:
         "python scripts/plot_ima3_lrt_summary.py"
-
