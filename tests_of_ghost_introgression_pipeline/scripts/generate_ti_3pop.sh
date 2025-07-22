@@ -1,4 +1,11 @@
 #!/bin/bash
+# Script: generate_ti_3pop.sh
+# Author: Margaret Wanjiku
+# Purpose:
+#   Generates .ti files for 3-population IMa3 models.
+# Usage:
+#   bash generate_ti_3pop.sh input_dir output_dir ima3_path ncores burnin length interval chains hn ha hb
+
 set -euo pipefail
 
 INPUT_DIR=$1
