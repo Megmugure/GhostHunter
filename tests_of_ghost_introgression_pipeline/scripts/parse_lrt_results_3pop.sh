@@ -1,5 +1,10 @@
 #!/bin/bash
-
+# Script: parse_lrt_results_3pop.sh
+# Author: Margaret Wanjiku
+# Purpose:
+#   Parses IMa3 3-pop LRT outputs and extracts LRT stats.
+# Output:
+#   results/ima3/All_LRT_results_3pop.csv
 
 set -euo pipefail
 
