@@ -1,4 +1,11 @@
 #!/bin/bash
+# Script: generate_ti_2pop.sh
+# Author: Margaret Wanjiku
+# Purpose:
+#   Generates .ti files from IMa3 2-pop input files.
+# Usage:
+#   bash generate_ti_2pop.sh input_dir output_dir ima3_path ncores burnin length interval chains hn ha hb
+
 set -euo pipefail
 
 INPUT_DIR=$1
