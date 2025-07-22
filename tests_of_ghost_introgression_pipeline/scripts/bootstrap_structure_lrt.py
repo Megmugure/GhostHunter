@@ -1,15 +1,34 @@
 #!/usr/bin/env python3
+"""
+Script: bootstrap_structure_lrt.py
+Author: Margaret Wanjiku
+Purpose:
+    Performs a bootstrapped likelihood ratio test between STRUCTURE K values.
+    For each model/replicate, compares K vs K+1.
+
+Arguments:
+    --input: CSV file from parse_structure_logliks.py
+    --output: Output CSV file for bootstrap results
+    --bootstraps: Number of bootstrap replicates
+
+Output:
+    CSV with columns:
+        model, replicate, K0, K1, loglik_K0, loglik_K1, T_obs, p_value
+"""
+
 import pandas as pd
 import numpy as np
 import argparse
 
+# Parse command-line arguments
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True, help="Input CSV file from STRUCTURE log-likelihoods")
-    parser.add_argument("--output", default="bootstrap_lrt_results.csv")
+    parser.add_argument("--output", default="bootstrap_lrt_results.csv", help="Output CSV file")
     parser.add_argument("--bootstraps", type=int, default=100, help="Number of bootstrap replicates")
     args = parser.parse_args()
 
+    # Load input data
     df = pd.read_csv(args.input)
     df = df.dropna(subset=["model", "replicate", "K", "log_likelihood"])
 
@@ -36,8 +55,9 @@ def main():
                 loglik_k1 = row_k1["log_likelihood"].values[0]
                 T_obs = -2 * (loglik_k - loglik_k1)
 
+                # Bootstrap null distribution under K
                 boot_stats = [
-                    -2 * (np.random.choice(row_k["log_likelihood"].values) - 
+                    -2 * (np.random.choice(row_k["log_likelihood"].values) -
                           np.random.choice(row_k["log_likelihood"].values))
                     for _ in range(args.bootstraps)
                 ]
