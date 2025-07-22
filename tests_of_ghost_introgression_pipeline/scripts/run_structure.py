@@ -1,8 +1,30 @@
+#!/usr/bin/env python3
+"""
+Script: run_structure.py
+Author: Margaret Wanjiku
+Purpose:
+    Wraps the STRUCTURE executable for a specific replicate and value of K.
+    Generates parameter files and invokes STRUCTURE with appropriate flags.
+
+Inputs:
+    --input: .str file
+    --outdir: output directory
+    --structure_exec: path to STRUCTURE binary
+    --K: number of clusters
+    --burnin: number of burn-in iterations
+    --numreps: number of MCMC reps after burn-in
+
+Output:
+    STRUCTURE output file (structure_run_K{K}_f)
+"""
+
 import os
 import argparse
 import subprocess
 
+# Functions to build STRUCTURE parameter files
 def build_mainparams(path, num_inds, num_loci, burnin, numreps):
+    """Write mainparams file with STRUCTURE parameters"""
     with open(path, "w") as f:
         f.write(f"""#define MAXPOPS 10
 #define NUMINDS {num_inds}
@@ -29,7 +51,9 @@ def build_mainparams(path, num_inds, num_loci, burnin, numreps):
 #define NUMREPS {numreps}
 """)
 
+
 def build_extraparams(path):
+    """Write extraparams file for STRUCTURE"""
     with open(path, "w") as f:
         f.write("""INFERALPHA 1
 ALPHA 1.0
@@ -43,44 +67,43 @@ PRINTLIKES 0
 PRINTKLD 0
 """)
 
+
+# CLI interface
 def main():
     parser = argparse.ArgumentParser(description="Run STRUCTURE for a given replicate and K.")
     parser.add_argument("--input", required=True, help="Input .str file")
-    parser.add_argument("--outdir", required=True, help="Output directory for this STRUCTURE run")
+    parser.add_argument("--outdir", required=True, help="Directory to save STRUCTURE output")
     parser.add_argument("--structure_exec", required=True, help="Path to STRUCTURE executable")
     parser.add_argument("--K", type=int, required=True, help="Number of clusters (K)")
-    parser.add_argument("--burnin", type=int, default=100000)
-    parser.add_argument("--numreps", type=int, default=500000)
-
+    parser.add_argument("--burnin", type=int, default=100000, help="Number of burn-in iterations")
+    parser.add_argument("--numreps", type=int, default=500000, help="Number of MCMC reps after burn-in")
     args = parser.parse_args()
 
-    input_file = args.input
-    K = args.K
-    outdir = args.outdir
-    structure_exec = args.structure_exec
-    burnin = args.burnin
-    numreps = args.numreps
+    # Ensure output directory exists
+    os.makedirs(args.outdir, exist_ok=True)
 
-    os.makedirs(outdir, exist_ok=True)
-
-    with open(input_file) as f:
+    # Determine number of individuals and loci from input .str file
+    with open(args.input) as f:
         lines = [l.strip() for l in f if l.strip()]
         num_inds = len(lines)
-        num_loci = len(lines[0].split()) - 1
+        num_loci = len(lines[0].split()) - 1  # First column is individual ID
 
-    mainparams = os.path.join(outdir, "mainparams.txt")
-    extraparams = os.path.join(outdir, "extraparams.txt")
-    output_prefix = os.path.join(outdir, f"structure_run_K{K}")  # STRUCTURE appends _f
-
-    build_mainparams(mainparams, num_inds, num_loci, burnin, numreps)
+    # Create parameter files
+    mainparams = os.path.join(args.outdir, "mainparams.txt")
+    extraparams = os.path.join(args.outdir, "extraparams.txt")
+    build_mainparams(mainparams, num_inds, num_loci, args.burnin, args.numreps)
     build_extraparams(extraparams)
 
+    # STRUCTURE output file prefix (STRUCTURE appends _f to it)
+    output_prefix = os.path.join(args.outdir, f"structure_run_K{args.K}")
+
+    # Build STRUCTURE command
     cmd = [
-        structure_exec,
-        "-K", str(K),
+        args.structure_exec,
+        "-K", str(args.K),
         "-m", mainparams,
         "-e", extraparams,
-        "-i", input_file,
+        "-i", args.input,
         "-o", output_prefix
     ]
 
