@@ -1,4 +1,25 @@
 #!/usr/bin/env python3
+"""
+Script: plot_structure_summary.py
+Author: Margaret Wanjiku
+Purpose:
+    Visualizes STRUCTURE analysis results:
+    1. Log-likelihood vs K
+    2. AIC and BIC vs K
+    3. Bootstrap LRT p-values across K
+
+Arguments:
+    --loglik: CSV from parse_structure_logliks.py
+    --aicbic: CSV from compute_structure_aic_bic.py
+    --lrt: CSV from bootstrap_structure_lrt.py
+    --outdir: Directory to save plots (default: results)
+
+Output:
+    - plot_loglik_vs_k.png
+    - plot_aic_bic_vs_k.png
+    - plot_bootstrap_lrt_pvalues.png
+"""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
@@ -14,11 +35,12 @@ def main():
 
     os.makedirs(args.outdir, exist_ok=True)
 
+    # Load input data
     loglik_df = pd.read_csv(args.loglik)
     aic_bic_df = pd.read_csv(args.aicbic)
     lrt_df = pd.read_csv(args.lrt)
 
-    # Plot 1: Log-Likelihood vs K per Model
+    # Plot 1: STRUCTURE log-likelihood vs K
     plt.figure(figsize=(10, 6))
     for model in loglik_df["model"].unique():
         df = loglik_df[loglik_df["model"] == model]
@@ -33,7 +55,7 @@ def main():
     plt.savefig(os.path.join(args.outdir, "plot_loglik_vs_k.png"))
     plt.close()
 
-    # Plot 2: AIC and BIC across K per Model
+    # Plot 2: AIC and BIC vs K
     plt.figure(figsize=(12, 6))
     for model in aic_bic_df["model"].unique():
         df = aic_bic_df[aic_bic_df["model"] == model]
@@ -50,7 +72,7 @@ def main():
     plt.savefig(os.path.join(args.outdir, "plot_aic_bic_vs_k.png"))
     plt.close()
 
-    # Plot 3: Bootstrap LRT p-values for K Comparisons
+    # Plot 3: Bootstrap LRT p-values
     plt.figure(figsize=(10, 6))
     mean_pvals = lrt_df.groupby(["K0", "K1"])["p_value"].mean().reset_index()
     plt.plot(mean_pvals["K1"], mean_pvals["p_value"], marker='o')
@@ -68,4 +90,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
