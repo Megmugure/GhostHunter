@@ -1,0 +1,44 @@
+run_mode: full
+
+ks: [1,2,3,4,5,6]
+
+structure_exec: software/structure/structure
+ima3_exec: ./IMa3/IMa3
+
+input_dirs:
+  structure: data/structure_inputs
+  ima3: data/ima3_inputs
+  fasta: data/argweaver_inputs
+
+########################################
+# IMa3 SETTINGS
+########################################
+
+ima3:
+  burnin: 100
+  chain_length: 500
+  migration: 5.5
+  theta: 5.5
+
+########################################
+# ARGWEAVER SETTINGS
+########################################
+
+argweaver:
+  run: true
+
+  executable: /home3/mwanjiku/Tools/miniconda3/envs/argweaver_py2/bin/arg-sample
+
+  extract_exec: /home3/mwanjiku/Tools/miniconda3/envs/argweaver_py2/bin/arg-extract-tmrca
+
+  input_dir: data/argweaver_inputs
+
+  popsize: 10000
+  mutrate: 2.5e-8
+  recombrate: 1.5e-8
+
+  ntimes: 20
+  maxtime: 200000
+
+  iters: 100
+  sample_step: 10

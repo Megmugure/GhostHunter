@@ -1,9 +1,48 @@
-IMa3/
-.snakemake/
-logs/ runs/ results/ scratch/ tmp/
-*.log
-__pycache__/ .ipynb_checkpoints/
+########################################
+# Large experimental directories
+########################################
 
-# big/derived artifacts
-tests_of_ghost_introgression_pipeline/data/
-tests_of_ghost_introgression_pipeline/software/argweaver-master/
+Models/
+IMa3/
+tests_of_ghost_introgression_pipeline/
+
+########################################
+# Snakemake + workflow artifacts
+########################################
+
+.snakemake/
+results/
+logs/
+scratch/
+tmp/
+runs/
+
+########################################
+# Python cache / notebooks
+########################################
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+########################################
+# System / editor files
+########################################
+
+.DS_Store
+*.swp
+.vscode/
+
+########################################
+# Logs
+########################################
+
+*.log
+
+########################################
+# Conda / environment artifacts (optional safety)
+########################################
+
+*.conda
+*.tar.bz2
+conda-meta/

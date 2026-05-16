@@ -1,0 +1,9 @@
+name: ghost-pop-gen-r
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base
+  - r-essentials
+  - r-diptest
+  - r-ggplot2
